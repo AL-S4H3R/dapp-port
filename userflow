@@ -1,0 +1,11 @@
+Userflow:
+
+User -> {
+    publicAddress: string
+    nonce: integer/buff
+    username: string
+}
+
+1 -> generate a random integer called nonce.
+2 -> when user signs up, add the nonce associated with publicAddress to skyDB/IPFS
+3 -> maybe later
