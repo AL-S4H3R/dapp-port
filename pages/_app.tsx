@@ -4,9 +4,9 @@ import { Fragment } from 'react'
 import { ChakraProvider } from '@chakra-ui/react'
 import { MoralisProvider } from 'react-moralis'
 
-import { DAppProvider, Config, Polygon, Mumbai, Mainnet } from '@usedapp/core'
+import { DAppProvider, Config, Polygon, Mumbai, Mainnet, BSCTestnet } from '@usedapp/core'
 const config : Config = {
-  networks: [Polygon, Mumbai, Mainnet]
+  networks: [ Polygon, Mumbai, Mainnet, BSCTestnet ]
 }
 
 

@@ -1,4 +1,20 @@
-import { Box, HStack, Stack, Heading, Button, Text, Select, Input } from '@chakra-ui/react'
+import { 
+	Box, 
+	HStack, 
+	Stack, 
+	Heading, 
+	Button, 
+	Text, 
+	Select, 
+	Input, 
+	Modal,
+	ModalOverlay,
+	ModalBody,
+	ModalHeader,
+	ModalFooter,
+	useDisclosure, 
+	ModalContent
+} from '@chakra-ui/react'
 import { useEthers } from '@usedapp/core'
 import type { NextPage } from 'next'
 import { Fragment, useState } from 'react'
@@ -8,7 +24,7 @@ import axios from 'axios'
 const Home: NextPage = () => {	
 
 	const { activateBrowserWallet, account, chainId, library } = useEthers()
-	
+	const { onOpen, onClose, isOpen } = useDisclosure()
 	// const { authenticate, isAuthenticated, user, account, chainId } = useMoralis()
 	const [ contractAddress, setContractAddress ] = useState('')
 	const [ selectChain, setSelectChain ] = useState('')
@@ -40,6 +56,7 @@ const Home: NextPage = () => {
 				)
 				setSrc(res.data.result[0].SourceCode)
 				console.log(getConstructorParams(res.data.result[0].ABI))
+				onOpen()
 			}
 		}
 		catch(err){
@@ -49,6 +66,16 @@ const Home: NextPage = () => {
 
 	const getConstructorParams = (abi: string) => {
 		return JSON.parse(abi)[0].inputs.length
+	}
+
+	const deployToBSC = async () => {
+		if(chainId !== parseInt("97", 16)){
+			// @ts-ignore
+			await window.ethereum.request({
+				method: 'wallet_switchEthereumChain',
+    			params: [{ chainId: '0x61' }],
+			})
+		}
 	}
 
 	return(
@@ -70,14 +97,24 @@ const Home: NextPage = () => {
 						<option value='polygon' onClick={(e) => setSelectChain('polygon')}>Polygon Mainnet</option>
 					</Select>
 					<Input placeholder='Contract Address' value={contractAddress} onChange={(e) => setContractAddress(e.target.value)}/>
-					<Input placeholder='Add Constructor Params (comma separated)'/>
-					<Button onClick={getContractDetails}>Get Contract</Button>
-					<Button onClick={() => getConstructorParams(abi)}>Get Params</Button>
-					{
-						src && <p>{src}</p>
-					}
+					<Button onClick={getContractDetails}>Proceed</Button>
 				</Stack>
 			</Box>
+			<Modal isOpen={isOpen} onClose={onClose}>
+				<ModalOverlay />
+				<ModalContent>
+					<ModalHeader>Deploy</ModalHeader>
+					<ModalBody>
+						<Select placeholder='Select Chain'>
+							<option value='bsctest'>Binance Testnet</option>
+						</Select>
+						<Input placeholder='Enter Contstructor Params(comma separated)'/>
+					</ModalBody>
+					<ModalFooter>
+						<Button onClick={deployToBSC}>Deploy to Binance Testnet</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
 		</Fragment>
 	)
 }
