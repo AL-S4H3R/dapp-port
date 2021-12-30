@@ -20,6 +20,7 @@ import type { NextPage } from 'next'
 import { Fragment, useState } from 'react'
 import { useMoralis } from 'react-moralis'
 import axios from 'axios'
+import { ethers } from 'ethers'
 
 const Home: NextPage = () => {	
 
@@ -55,7 +56,9 @@ const Home: NextPage = () => {
 					`${polygonApi}&address=${contractAddress}&apiKey=${polygonScanApiKey}`
 				)
 				setSrc(res.data.result[0].SourceCode)
+				setAbi(res.data.result[0].ABI)
 				console.log(getConstructorParams(res.data.result[0].ABI))
+				// opens the modal
 				onOpen()
 			}
 		}
@@ -76,6 +79,13 @@ const Home: NextPage = () => {
     			params: [{ chainId: '0x61' }],
 			})
 		}
+		console.log(JSON.parse(abi))
+		// @ts-ignore
+		const provider = new ethers.providers.Web3Provider(window.ethereum)
+		const signer = await provider.getSigner()
+		const contractInstance = new ethers.ContractFactory(JSON.parse(abi), bytecode, signer)
+		const txHash = await contractInstance.deploy()
+		console.log(txHash)
 	}
 
 	return(
@@ -107,6 +117,7 @@ const Home: NextPage = () => {
 					<ModalBody>
 						<Select placeholder='Select Chain'>
 							<option value='bsctest'>Binance Testnet</option>
+							<option value='bsc'>Binance Mainnet</option>
 						</Select>
 						<Input placeholder='Enter Contstructor Params(comma separated)'/>
 					</ModalBody>
