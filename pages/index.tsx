@@ -13,14 +13,20 @@ import {
 	ModalHeader,
 	ModalFooter,
 	useDisclosure, 
-	ModalContent
+	ModalContent,
+	Alert,
+	AlertIcon,
+	AlertTitle,
+	VStack,
+	Center
 } from '@chakra-ui/react'
 import { useEthers } from '@usedapp/core'
 import type { NextPage } from 'next'
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useMoralis } from 'react-moralis'
 import axios from 'axios'
 import { ethers } from 'ethers'
+import { chains } from '../chains'
 
 const Home: NextPage = () => {	
 
@@ -87,7 +93,7 @@ const Home: NextPage = () => {
 		const txHash = await contractInstance.deploy()
 		console.log(txHash)
 	}
-
+/* 
 	return(
 		<Fragment>
 			<Box h='100vh' bgColor={'whiteAlpha.900'}>
@@ -128,6 +134,84 @@ const Home: NextPage = () => {
 			</Modal>
 		</Fragment>
 	)
+	*/
+	const [alert, setAlert] = useState('')
+    const [currentAccount, setCurrentAccount] = useState('')
+
+	useEffect(() => {
+		// @ts-ignore
+		if(typeof window.ethereum === 'undefined'){
+			setAlert('Kindly install metamask to get started.')		
+		}
+	}, [])
+
+	const requestAccounts = async () => {
+		// @ts-ignore
+		const accounts: Array<string> = await window.ethereum.request({
+			method: 'eth_requestAccounts'
+		})
+		setCurrentAccount(accounts[0])
+	}
+
+	const shortenAccount = async (account: string) => {
+		return `${account.substring(0,5)}...${account.substring(37)}`
+	}
+
+	return(
+		<Fragment>
+			<Box h={'100vh'} bgColor={'whiteAlpha.900'}>
+				{
+					alert && 
+					<Alert status='error'>
+						<AlertIcon/>
+						<AlertTitle>{alert}</AlertTitle>
+					</Alert>
+				}
+				<HStack p={8} justify={'space-between'}>
+					<Heading>portoDapp</Heading>
+					{
+						currentAccount ? 
+						<Text>{currentAccount.substring(0,5)}...{currentAccount.substring(37)}</Text> :
+						<Button onClick={requestAccounts}>connect wallet</Button>
+					}
+				</HStack>
+				<Stack px={8} py={4}>
+					<Text>FROM:</Text>
+					<Select>
+						{
+							chains.map(chain => {
+								return(
+									<option value={chain.chainId}>
+										{chain.chain}
+									</option>
+								)
+							})
+						}
+					</Select>
+					<Input placeholder='Add Contract Address'/>
+					<Select placeholder='Select Deployment Chain'>
+						{
+							chains.map(chain => {
+								return(
+									<option value={chain.chainId}>
+										{chain.chain}
+									</option>
+								)
+							})
+						}
+					</Select>
+					<Button 
+						bgColor={'blackAlpha.900'} 
+						color={'whiteAlpha.900'} 
+						colorScheme={'blackAlpha'}
+					>
+						Deploy
+					</Button>
+				</Stack>
+			</Box>
+		</Fragment>
+	)
 }
+
 
 export default Home
