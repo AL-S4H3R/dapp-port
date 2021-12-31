@@ -38,7 +38,9 @@ const Home: NextPage = () => {
 	const [ abi, setAbi ] = useState('')
 	const [ bytecode, setBytecode ] = useState('')
 	const [ src, setSrc ] = useState('')
-
+	const [alert, setAlert] = useState('')
+    const [currentAccount, setCurrentAccount] = useState('')
+	
 	const etherscanApi = `https://api.etherscan.com/api?module=contract&action=getsourcecode`
 	const etherScanApiKey = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY
 
@@ -54,19 +56,20 @@ const Home: NextPage = () => {
 
 		console.log('Executing function call')
 		try {
-			if(library){
-				const bytecode = await library.getCode(contractAddress)
-				console.log(bytecode.toString())
-				// Get contract ABI, detect smart contract params and store abi in a state var
-				const res = await axios.get(
-					`${polygonApi}&address=${contractAddress}&apiKey=${polygonScanApiKey}`
-				)
-				setSrc(res.data.result[0].SourceCode)
-				setAbi(res.data.result[0].ABI)
-				console.log(getConstructorParams(res.data.result[0].ABI))
-				// opens the modal
-				onOpen()
-			}
+			// @ts-ignore
+			const provider = new ethers.providers.Web3Provider(window.ethereum)	
+			const bytecode = await provider.getCode(contractAddress)
+			setBytecode(bytecode)
+			console.log(bytecode.toString())
+			// Get contract ABI, detect smart contract params and store abi in a state var
+			const res = await axios.get(
+				`${polygonApi}&address=${contractAddress}&apiKey=${polygonScanApiKey}`
+			)
+			setSrc(res.data.result[0].SourceCode)
+			setAbi(res.data.result[0].ABI)
+			console.log(getConstructorParams(res.data.result[0].ABI))
+			// opens the modal
+			onOpen()
 		}
 		catch(err){
 			console.log(err)
@@ -88,56 +91,12 @@ const Home: NextPage = () => {
 		console.log(JSON.parse(abi))
 		// @ts-ignore
 		const provider = new ethers.providers.Web3Provider(window.ethereum)
-		const signer = await provider.getSigner()
+		const signer = provider.getSigner()
 		const contractInstance = new ethers.ContractFactory(JSON.parse(abi), bytecode, signer)
 		const txHash = await contractInstance.deploy()
 		console.log(txHash)
 	}
-/* 
-	return(
-		<Fragment>
-			<Box h='100vh' bgColor={'whiteAlpha.900'}>
-				<Stack>
-					<HStack px={{ base: 4, md: 6, lg: 8 }} py={{ base: 4, lg: 8 }} justify={'space-between'}>
-						<Heading fontFamily={'Share Tech Mono'} color={'blackAlpha.900'}>portoDapp</Heading>
-						{
-							account ? 
-							<Text>Connected</Text> : 
-							<Button onClick={() => activateBrowserWallet()}>Login</Button>
-						}
-					</HStack>
-					<Select placeholder='Select Chain'>
-  						<option value='eth' onClick={(e) => setSelectChain('eth')}>Ethereum Mainnet</option>
-  						<option value='rinkeby' onClick={(e) => setSelectChain('rinkeby')}>Rinkeby Testnet</option>
-  						<option value='kovan' onClick={(e) => setSelectChain('kovan')}>Kovan Testnet</option>
-						<option value='polygon' onClick={(e) => setSelectChain('polygon')}>Polygon Mainnet</option>
-					</Select>
-					<Input placeholder='Contract Address' value={contractAddress} onChange={(e) => setContractAddress(e.target.value)}/>
-					<Button onClick={getContractDetails}>Proceed</Button>
-				</Stack>
-			</Box>
-			<Modal isOpen={isOpen} onClose={onClose}>
-				<ModalOverlay />
-				<ModalContent>
-					<ModalHeader>Deploy</ModalHeader>
-					<ModalBody>
-						<Select placeholder='Select Chain'>
-							<option value='bsctest'>Binance Testnet</option>
-							<option value='bsc'>Binance Mainnet</option>
-						</Select>
-						<Input placeholder='Enter Contstructor Params(comma separated)'/>
-					</ModalBody>
-					<ModalFooter>
-						<Button onClick={deployToBSC}>Deploy to Binance Testnet</Button>
-					</ModalFooter>
-				</ModalContent>
-			</Modal>
-		</Fragment>
-	)
-	*/
-	const [alert, setAlert] = useState('')
-    const [currentAccount, setCurrentAccount] = useState('')
-
+	
 	useEffect(() => {
 		// @ts-ignore
 		if(typeof window.ethereum === 'undefined'){
@@ -177,7 +136,7 @@ const Home: NextPage = () => {
 				</HStack>
 				<Stack px={8} py={4}>
 					<Text>FROM:</Text>
-					<Select>
+					<Select onChange={(e) => setSelectChain(e.target.value)}>
 						{
 							chains.map(chain => {
 								return(
@@ -188,8 +147,13 @@ const Home: NextPage = () => {
 							})
 						}
 					</Select>
-					<Input placeholder='Add Contract Address'/>
-					<Select placeholder='Select Deployment Chain'>
+					<Input 
+						placeholder='Add Contract Address' 
+						value={contractAddress} 
+						onChange={(e) => setContractAddress(e.target.value)}
+					/>
+					<Text pt={4}>Select Deployment Chain:</Text>
+					<Select value={selectChain}>
 						{
 							chains.map(chain => {
 								return(
@@ -204,11 +168,24 @@ const Home: NextPage = () => {
 						bgColor={'blackAlpha.900'} 
 						color={'whiteAlpha.900'} 
 						colorScheme={'blackAlpha'}
+						onClick={getContractDetails}
 					>
 						Deploy
 					</Button>
 				</Stack>
 			</Box>
+			<Modal isOpen={isOpen} onClose={onClose}>
+				<ModalOverlay />
+				<ModalContent>
+					<ModalHeader>Final Step</ModalHeader>
+					<ModalBody>
+						<Input placeholder='Enter Contstructor Params(comma separated)'/>
+					</ModalBody>
+					<ModalFooter>
+						<Button onClick={deployToBSC}>Deploy to Binance Testnet</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
 		</Fragment>
 	)
 }
